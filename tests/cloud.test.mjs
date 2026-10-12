@@ -157,6 +157,7 @@ test(
       async function tokenFor(
         scopes,
         redirect = "https://client.example.test/callback",
+        browser = false,
       ) {
         const reg = await call("/register", {
           method: "POST",
@@ -223,11 +224,50 @@ test(
             "Content-Type": "application/x-www-form-urlencoded",
             Origin: origin,
             Cookie: ownerCookie + "; " + consentCookie,
+            ...(browser ? { Accept: "text/html,application/xhtml+xml" } : {}),
           },
           body: form.toString(),
         });
-        assert.equal(allowed.status, 302);
-        const callback = new URL(allowed.headers.get("Location"));
+        let callback;
+        if (browser) {
+          assert.equal(allowed.status, 200);
+          assert.equal(allowed.headers.get("Location"), null);
+          assert.equal(allowed.headers.get("Referrer-Policy"), "no-referrer");
+          assert.ok(
+            allowed.headers.get("Content-Type").startsWith("text/html"),
+          );
+          assert.ok(
+            allowed.headers
+              .get("Content-Security-Policy")
+              .includes("default-src 'none'"),
+          );
+          const handoff = await allowed.text();
+          assert.ok(handoff.includes("Access approved"));
+          assert.ok(!handoff.includes("<script"));
+          assert.ok(!handoff.includes(password));
+          const href = /id="oauth-continue" href="([^"]+)"/.exec(handoff)?.[1];
+          assert.ok(href);
+          callback = new URL(
+            href.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n))),
+          );
+          assert.equal(callback.origin, new URL(redirect).origin);
+          assert.equal(callback.pathname, new URL(redirect).pathname);
+          const sessionCookie = allowed.headers
+            .getSetCookie()
+            .find((c) => c.startsWith("__Host-felicity-session="));
+          assert.ok(sessionCookie);
+          assert.equal(
+            (
+              await call("/api/dashboard", {
+                headers: { Cookie: sessionCookie.split(";")[0] },
+              })
+            ).status,
+            200,
+          );
+        } else {
+          assert.equal(allowed.status, 302);
+          callback = new URL(allowed.headers.get("Location"));
+        }
         assert.equal(callback.searchParams.get("state"), "fixture-state");
         const exchange = new URLSearchParams({
           grant_type: "authorization_code",
@@ -352,6 +392,20 @@ test(
           })
         ).status,
         403,
+      );
+      const browser = await tokenFor(
+        ["solar:read", "offline_access"],
+        "https://www.cursor.com/agents/mcp/oauth/callback",
+        true,
+      );
+      assert.ok(browser.access_token);
+      assert.equal(
+        (
+          await call("/api/widget", {
+            headers: { Authorization: "Bearer " + browser.access_token },
+          })
+        ).status,
+        200,
       );
       const refresh = new URLSearchParams({
         grant_type: "refresh_token",

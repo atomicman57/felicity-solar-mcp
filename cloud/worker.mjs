@@ -106,17 +106,18 @@ function safeHtml(body, headers = {}, validatedRedirect) {
       ? callback.origin
       : callback.protocol
     : "";
+  const responseHeaders = new Headers(headers);
+  responseHeaders.set("Content-Type", "text/html; charset=utf-8");
+  responseHeaders.set("Cache-Control", "no-store");
+  responseHeaders.set(
+    "Content-Security-Policy",
+    `default-src 'none'; style-src 'unsafe-inline'; form-action 'self'${callbackSource ? " " + callbackSource : ""}; frame-ancestors 'none'; base-uri 'none'`,
+  );
+  responseHeaders.set("X-Content-Type-Options", "nosniff");
+  responseHeaders.set("Referrer-Policy", "no-referrer");
   return new Response(
     `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Felicity Solar</title><style>body{font:16px system-ui;background:#f4f6ef;color:#223329;margin:40px auto;padding:24px;max-width:540px}input,button{font:inherit;padding:12px;margin:8px 0}input:not([type=checkbox]){display:block;width:90%}button{background:#23563c;color:white;border:0;border-radius:8px}a{color:#23563c}small{display:block;color:#576656}</style>${body}</html>`,
-    {
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store",
-        "Content-Security-Policy": `default-src 'none'; style-src 'unsafe-inline'; form-action 'self'${callbackSource ? " " + callbackSource : ""}; frame-ancestors 'none'; base-uri 'none'`,
-        "X-Content-Type-Options": "nosniff",
-        ...headers,
-      },
-    },
+    { headers: responseHeaders },
   );
 }
 function loginFields() {
@@ -141,11 +142,7 @@ async function authorize(req, env) {
       )
       .join("");
     const html = `<h1>Connect Felicity Solar</h1><p><strong>${escape(details.clientName)}</strong> is requesting access.</p><p>Return address: <strong>${escape(details.redirectHost)}</strong>.</p>${details.clientDomain ? `<p>Verified client domain: ${escape(details.clientDomain)}</p>` : "<p>The client name is self-registered, not a verified identity.</p>"}${details.redirectIsLoopback ? "<p>Continue only if you started connecting an app on your computer.</p>" : ""}<form method="post" action="/authorize"><input type="hidden" name="handle" value="${escape(consent.handle)}">${signedIn ? "" : loginFields()}<h2>Permissions</h2>${fields}<p>This service is private to the configured owner. It cannot change inverter settings.</p><button name="decision" value="approve">Allow read access</button> <button name="decision" value="deny" formnovalidate>Deny</button></form><small>Use your Felicity login only on your own deployed service.</small>`;
-    return safeHtml(
-      html,
-      Object.fromEntries(consent.headers),
-      auth.redirectUri,
-    );
+    return safeHtml(html, consent.headers, auth.redirectUri);
   }
   if (req.method !== "POST" || !sameOrigin(req))
     return json({ error: "Origin rejected" }, 403);
@@ -175,8 +172,16 @@ async function authorize(req, env) {
     scope: approved.request.scope,
     props: { userId: owner(env) },
   });
-  approved.headers.set("Location", redirectTo);
   approved.headers.append("Set-Cookie", await issueSession(env));
+  if (req.headers.get("Accept")?.includes("text/html")) {
+    // A normal link avoids applying the submitting form's CSP to a client's
+    // subsequent callback redirects, while keeping the page script-free.
+    return safeHtml(
+      `<h1>Access approved</h1><p>Return to your app to finish connecting Felicity Solar.</p><p><a id="oauth-continue" href="${escape(redirectTo)}" rel="noreferrer noopener">Continue to your app</a></p>`,
+      approved.headers,
+    );
+  }
+  approved.headers.set("Location", redirectTo);
   return new Response(null, { status: 302, headers: approved.headers });
 }
 
