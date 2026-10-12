@@ -4,9 +4,40 @@
   "description": "Read-only MCP for Felicity Solar plants, inverters, batteries, grid and history",
   "license": "MIT",
   "type": "module",
-  "bin": {"felicity-solar-data-mcp": "src/server.mjs"},
-  "engines": {"node": ">=22"},
-  "scripts": {"start": "node src/server.mjs", "test": "node --test tests/*.test.mjs"},
-  "files": ["src", "README.md", "LICENSE"],
-  "dependencies": {"@modelcontextprotocol/sdk": "^1.29.0", "zod": "^4.4.3"}
+  "bin": {
+    "felicity-solar-data-mcp": "src/server.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atomicman57/felicity-solar-mcp.git"
+  },
+  "homepage": "https://github.com/atomicman57/felicity-solar-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/atomicman57/felicity-solar-mcp/issues"
+  },
+  "keywords": [
+    "felicity-solar",
+    "mcp",
+    "solar",
+    "inverter",
+    "battery",
+    "grid",
+    "analytics"
+  ]
 }

@@ -6,22 +6,22 @@ Supports inverters, batteries and every device type returned by your account. Ra
 
 ## Tools
 
-| Tool | Data |
-| --- | --- |
-| `list_plants` | All accessible plants, following pagination |
-| `get_plant` | Plant details, timezone, capacity and capabilities |
-| `list_devices` | All accessible devices, models, firmware and metadata |
-| `get_device_snapshot` | Latest complete raw telemetry for any device |
-| `get_all_snapshots` | Fleet telemetry with explicit individual failures |
-| `get_energy_flow` | Plant grid, PV, battery and load flow |
-| `get_grid_status` | Grid presence, voltage, measurement age, reporting interval |
-| `get_available_fields` | Vendor measurement fields, display definitions and units |
-| `get_chart` | Intraday, monthly or yearly raw charts with selectable fields |
-| `get_history_rows` | Complete pageable raw measurements for a device/date |
-| `get_device_alarms` | Pageable device alarms with date filters |
-| `get_alarm_summary` | Grouped plant alarms with date filters |
-| `get_daily_analysis` | Grid hours, PV energy/peak, peak duration, battery minimum and energy totals |
-| `get_grid_patterns` | Daily/week totals, weekday/hour probability map, best PV day and likely next window |
+| Tool                   | Data                                                                                |
+| ---------------------- | ----------------------------------------------------------------------------------- |
+| `list_plants`          | All accessible plants, following pagination                                         |
+| `get_plant`            | Plant details, timezone, capacity and capabilities                                  |
+| `list_devices`         | All accessible devices, models, firmware and metadata                               |
+| `get_device_snapshot`  | Latest complete raw telemetry for any device                                        |
+| `get_all_snapshots`    | Fleet telemetry with explicit individual failures                                   |
+| `get_energy_flow`      | Plant grid, PV, battery and load flow                                               |
+| `get_grid_status`      | Grid presence, voltage, measurement age, reporting interval                         |
+| `get_available_fields` | Vendor measurement fields, display definitions and units                            |
+| `get_chart`            | Intraday, monthly or yearly raw charts with selectable fields                       |
+| `get_history_rows`     | Complete pageable raw measurements for a device/date                                |
+| `get_device_alarms`    | Pageable device alarms with date filters                                            |
+| `get_alarm_summary`    | Grouped plant alarms with date filters                                              |
+| `get_daily_analysis`   | Grid hours, PV energy/peak, peak duration, battery minimum and energy totals        |
+| `get_grid_patterns`    | Daily/week totals, weekday/hour probability map, best PV day and likely next window |
 
 ## Install
 
