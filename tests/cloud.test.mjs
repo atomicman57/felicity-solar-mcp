@@ -187,6 +187,28 @@ test(
           headers: { Cookie: ownerCookie },
         });
         assert.equal(consent.status, 200);
+        const callbackUrl = new URL(redirect);
+        const callbackSource = ["http:", "https:"].includes(
+          callbackUrl.protocol,
+        )
+          ? callbackUrl.origin
+          : callbackUrl.protocol;
+        const csp = consent.headers.get("Content-Security-Policy");
+        assert.ok(csp.includes(`form-action 'self' ${callbackSource};`));
+        assert.ok(csp.includes("default-src 'none'"));
+        assert.ok(csp.includes("frame-ancestors 'none'"));
+        assert.ok(!csp.includes("evil.example"));
+        const unregistered = new URLSearchParams(params);
+        unregistered.set("redirect_uri", "https://evil.example/callback");
+        const rejected = await call("/authorize?" + unregistered, {
+          headers: { Cookie: ownerCookie },
+        });
+        assert.equal(rejected.status, 400);
+        assert.ok(
+          !(rejected.headers.get("Content-Security-Policy") || "").includes(
+            "evil.example",
+          ),
+        );
         const html = await consent.text();
         assert.ok(html.includes("Allow read access"));
         assert.ok(!html.includes(password));

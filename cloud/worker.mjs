@@ -97,15 +97,22 @@ async function limitLogin(req, env) {
     await readInternal(env, "/limit", { key: digest(raw).toString("hex") })
   ).allowed;
 }
-function safeHtml(body, headers = {}) {
+function safeHtml(body, headers = {}, validatedRedirect) {
+  // Browsers also apply form-action to the OAuth POST's redirect. Only allow
+  // the callback that the provider validated against this client's metadata.
+  const callback = validatedRedirect ? new URL(validatedRedirect) : null;
+  const callbackSource = callback
+    ? ["https:", "http:"].includes(callback.protocol)
+      ? callback.origin
+      : callback.protocol
+    : "";
   return new Response(
     `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Felicity Solar</title><style>body{font:16px system-ui;background:#f4f6ef;color:#223329;margin:40px auto;padding:24px;max-width:540px}input,button{font:inherit;padding:12px;margin:8px 0}input:not([type=checkbox]){display:block;width:90%}button{background:#23563c;color:white;border:0;border-radius:8px}a{color:#23563c}small{display:block;color:#576656}</style>${body}</html>`,
     {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": "no-store",
-        "Content-Security-Policy":
-          "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+        "Content-Security-Policy": `default-src 'none'; style-src 'unsafe-inline'; form-action 'self'${callbackSource ? " " + callbackSource : ""}; frame-ancestors 'none'; base-uri 'none'`,
         "X-Content-Type-Options": "nosniff",
         ...headers,
       },
@@ -134,7 +141,11 @@ async function authorize(req, env) {
       )
       .join("");
     const html = `<h1>Connect Felicity Solar</h1><p><strong>${escape(details.clientName)}</strong> is requesting access.</p><p>Return address: <strong>${escape(details.redirectHost)}</strong>.</p>${details.clientDomain ? `<p>Verified client domain: ${escape(details.clientDomain)}</p>` : "<p>The client name is self-registered, not a verified identity.</p>"}${details.redirectIsLoopback ? "<p>Continue only if you started connecting an app on your computer.</p>" : ""}<form method="post" action="/authorize"><input type="hidden" name="handle" value="${escape(consent.handle)}">${signedIn ? "" : loginFields()}<h2>Permissions</h2>${fields}<p>This service is private to the configured owner. It cannot change inverter settings.</p><button name="decision" value="approve">Allow read access</button> <button name="decision" value="deny" formnovalidate>Deny</button></form><small>Use your Felicity login only on your own deployed service.</small>`;
-    return safeHtml(html, Object.fromEntries(consent.headers));
+    return safeHtml(
+      html,
+      Object.fromEntries(consent.headers),
+      auth.redirectUri,
+    );
   }
   if (req.method !== "POST" || !sameOrigin(req))
     return json({ error: "Origin rejected" }, 403);
