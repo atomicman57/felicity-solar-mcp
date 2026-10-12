@@ -188,6 +188,7 @@ test(
           headers: { Cookie: ownerCookie },
         });
         assert.equal(consent.status, 200);
+        assert.equal(consent.headers.get("Referrer-Policy"), "same-origin");
         const callbackUrl = new URL(redirect);
         const callbackSource = ["http:", "https:"].includes(
           callbackUrl.protocol,

@@ -114,7 +114,7 @@ function safeHtml(body, headers = {}, validatedRedirect) {
     `default-src 'none'; style-src 'unsafe-inline'; form-action 'self'${callbackSource ? " " + callbackSource : ""}; frame-ancestors 'none'; base-uri 'none'`,
   );
   responseHeaders.set("X-Content-Type-Options", "nosniff");
-  responseHeaders.set("Referrer-Policy", "no-referrer");
+  responseHeaders.set("Referrer-Policy", responseHeaders.get("Referrer-Policy") || "same-origin");
   return new Response(
     `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Felicity Solar</title><style>body{font:16px system-ui;background:#f4f6ef;color:#223329;margin:40px auto;padding:24px;max-width:540px}input,button{font:inherit;padding:12px;margin:8px 0}input:not([type=checkbox]){display:block;width:90%}button{background:#23563c;color:white;border:0;border-radius:8px}a{color:#23563c}small{display:block;color:#576656}</style>${body}</html>`,
     { headers: responseHeaders },
@@ -174,6 +174,7 @@ async function authorize(req, env) {
   });
   approved.headers.append("Set-Cookie", await issueSession(env));
   if (req.headers.get("Accept")?.includes("text/html")) {
+    approved.headers.set("Referrer-Policy", "no-referrer");
     // A normal link avoids applying the submitting form's CSP to a client's
     // subsequent callback redirects, while keeping the page script-free.
     return safeHtml(
