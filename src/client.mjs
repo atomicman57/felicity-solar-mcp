@@ -21,9 +21,11 @@ export class FelicityClient {
   constructor({
     user = process.env.FELICITY_USER,
     pass = process.env.FELICITY_PASS,
-    fetcher = fetch,
+    fetcher = (...args) => fetch(...args),
     timeZone = process.env.FELICITY_TIMEZONE || "Africa/Lagos",
+    publicKey,
   } = {}) {
+    this.publicKey = publicKey;
     this.user = user;
     this.pass = pass;
     this.fetcher = fetcher;
@@ -97,7 +99,9 @@ export class FelicityClient {
         throw new Error(
           "Configure FELICITY_USER and FELICITY_PASS using a secret manager.",
         );
-      const key = await readFile(new URL("./public-key.pem", import.meta.url));
+      const key =
+        this.publicKey ||
+        (await readFile(new URL("./public-key.pem", import.meta.url)));
       const d = await this.request(
         "/userlogin",
         {

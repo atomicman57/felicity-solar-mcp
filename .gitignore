@@ -4,3 +4,6 @@ data/
 *.log
 local/
 .DS_Store
+.wrangler/
+.dev.vars*
+wrangler.local.jsonc

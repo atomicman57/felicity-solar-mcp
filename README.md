@@ -29,7 +29,7 @@ Requires Node.js 22 or newer.
 
 ```sh
 npm ci --ignore-scripts
-npm test
+node --test tests/client.test.mjs
 node src/server.mjs
 ```
 
@@ -62,7 +62,9 @@ Reload the client's MCP configuration or start a new session. Stdio starts the s
 
 ## ChatGPT and remote clients
 
-ChatGPT cannot directly launch a local stdio command. Connect using an authenticated remote deployment or OpenAI Secure MCP Tunnel. A loopback-only Streamable HTTP transport is included:
+The included [Cloudflare deployment](docs/cloud.md) runs the dashboard, collection, MCP and widget API independently of your Mac. Remote clients use its HTTPS `/mcp` endpoint with OAuth; widgets can receive a narrower summary-only scope. Deploy it in your own account and provide credentials as Worker secrets.
+
+ChatGPT cannot directly launch a local stdio command. A local server can alternatively connect through OpenAI Secure MCP Tunnel, but that route still requires the host computer to run. A loopback-only Streamable HTTP transport is included:
 
 ```sh
 node src/server.mjs --http
@@ -100,11 +102,12 @@ Requests are paced, authentication is renewed in memory, responses are recursive
 ## Development
 
 ```sh
+npx wrangler deploy --dry-run --outdir local/cloud-build
 npm test
 npm audit
 ```
 
-Tests cover credential filtering, fleet pagination, concurrent authentication and a real MCP protocol handshake. Cloud smoke tests are performed separately using a private account; no account data is included in this repository.
+Tests cover credential filtering, fleet pagination, concurrent authentication and a real MCP protocol handshake. Cloud tests also cover OAuth, token refresh, access controls and collection using synthetic fixtures. Build the cloud bundle before running the full suite; see [cloud verification commands](docs/cloud.md#verify-before-switching-clients). Live deployment checks are separate; no private account data is included in this repository.
 
 ## Inspiration
 
